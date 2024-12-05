@@ -10,7 +10,7 @@ import geoip2.database
 LOG_PATTERN = re.compile(r'(\S+) - - \[(.*?)\] "(.*?)" (\d+) (\d+)')
 
 # Path to the GeoLite2 database (adjust as needed)
-GEOIP_DB_PATH = "GeoLite2-City.mmdb"
+GEOIP_DB_PATH = "/home/ajcreec/GeoLite2-City_20241203/GeoLite2-City.mmdb"
 
 def parse_log_line(line):
     match = LOG_PATTERN.match(line)
@@ -19,58 +19,64 @@ def parse_log_line(line):
         return ip, timestamp, request, int(status), int(size)
     return None
 
-def process_chunk(chunk, time_window_minutes, threshold, geoip_reader):
+def process_chunk(chunk, time_window_minutes, threshold, geoip_db_path):
     failed_attempts = defaultdict(lambda: deque())
-    suspicious_ips = defaultdict(list)  # IP to list of details (line number, datetime, etc.)
+    suspicious_ips = defaultdict(list)
     time_window = timedelta(minutes=time_window_minutes)
 
-    for line_number, line in enumerate(chunk, start=1):
-        parsed = parse_log_line(line)
-        if parsed:
-            ip, timestamp, request, status, _ = parsed
-            if '/login' in request and status == 401:
-                time = datetime.strptime(timestamp, '%d/%b/%Y:%H:%M:%S %z')
-                attempts = failed_attempts[ip]
-                attempts.append((line_number, time))
-                
-                # Remove attempts outside the time window
-                while attempts and time - attempts[0][1] > time_window:
-                    attempts.popleft()
-                
-                if len(attempts) >= threshold:
-                    try:
-                        country = geoip_reader.city(ip).country.name
-                    except Exception:
-                        country = "Unknown"
+    with geoip2.database.Reader(geoip_db_path) as geoip_reader:
+        for line_number, line in chunk:
+            parsed = parse_log_line(line)
+            if parsed:
+                ip, timestamp, request, status, _ = parsed
+                if '/login' in request and status == 401:
+                    time = datetime.strptime(timestamp, '%d/%b/%Y:%H:%M:%S %z')
+                    attempts = failed_attempts[ip]
+                    attempts.append((line_number, time))
                     
-                    suspicious_ips[ip].append({
-                        "line_number": line_number,
-                        "datetime": time,
-                        "country": country,
-                    })
+                    # Remove attempts outside the time window
+                    while attempts and time - attempts[0][1] > time_window:
+                        attempts.popleft()
+                    
+                    if len(attempts) >= threshold:
+                        try:
+                            country = geoip_reader.city(ip).country.name
+                        except Exception:
+                            country = "Unknown"
+                        
+                        suspicious_ips[ip].append({
+                            "line_number": line_number,
+                            "datetime": time,
+                            "country": country,
+                        })
 
     return suspicious_ips
 
 def filter_failed_logins_parallel(log_file, time_window_minutes, threshold):
-    with open(log_file, 'r') as f:
-        lines = f.readlines()
+    chunk_size = 150  # Number of lines per chunk
 
-    chunk_size = len(lines) // 4  # Adjust number of chunks as needed
-    chunks = [lines[i:i + chunk_size] for i in range(0, len(lines), chunk_size)]
-
-    with geoip2.database.Reader(GEOIP_DB_PATH) as geoip_reader, ProcessPoolExecutor() as executor:
-        results = executor.map(
-            process_chunk, 
-            chunks, 
-            [time_window_minutes] * len(chunks), 
-            [threshold] * len(chunks), 
-            [geoip_reader] * len(chunks)  # Share the geoip_reader instance
-        )
+    def chunk_reader(file, size):
+        chunk = []
+        for line_number, line in enumerate(file, start=1):
+            chunk.append((line_number, line))
+            if len(chunk) >= size:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
 
     suspicious_ips = defaultdict(list)
-    for result in results:
-        for ip, details in result.items():
-            suspicious_ips[ip].extend(details)
+    with open(log_file, 'r') as f:
+        with ProcessPoolExecutor(max_workers=2) as executor:  # Limit to 2 workers
+            futures = [
+                executor.submit(process_chunk, chunk, time_window_minutes, threshold, GEOIP_DB_PATH)
+                for chunk in chunk_reader(f, chunk_size)
+            ]
+
+            for future in futures:
+                result = future.result()
+                for ip, details in result.items():
+                    suspicious_ips[ip].extend(details)
 
     return suspicious_ips
 
