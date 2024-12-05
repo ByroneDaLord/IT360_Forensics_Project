@@ -18,10 +18,10 @@ Steps to Run the Python Script for Log Parser
      python log_analysis.py /path/to/log/file --time_window <value> --threshold <value>
      Replace `<value>` with your desired parameters.  
      Example:  
-         python log_analysis.py access.log --time_window 10 --threshold 5
+         python log_parser.py access.log --time_window 10 --threshold 5
 
    - Search for Specific Patterns (e.g., Failed Logins): 
-     python log_analysis.py /path/to/log/file --search "failed login"
+     python log_parser.py /path/to/log/file --search "failed login"
 
 5. Review the Results
    The script will display suspicious activity, such as repeated failed login attempts.  
