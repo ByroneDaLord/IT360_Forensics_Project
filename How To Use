@@ -1,5 +1,7 @@
 Steps to Run the Python Script for Log Parser
 
+Before Running the Program make sure Python is installed - additionally the database for geoip2 needs to be installed (https://www.maxmind.com/en/accounts/1097967/geoip/downloads)
+
 1. Download the Script 
    Save the Python script (`log_parser.py`) to a directory where you want to keep it.  
 
