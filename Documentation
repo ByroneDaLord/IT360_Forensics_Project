@@ -1,16 +1,37 @@
-1. Download The Python code to a directory you wish to keep it in.
-2. Place your access.log into the the same file directory.
-3. Open the command prompt and point at the directory that your files are located in. (i.e. cd user/cddonath/project)
-4. Once your directory is pointed at the correct are run the command 
-<python log_analysis.py /path/to/log/file --time_window * --threshold *> (* = fill in for value [example; --time_window 10 --threshold 5])
-or <python log_analysis.py /path/to/log/file --search "failed login">
-5. Your expected results should look something like the following
-    
-    Suspicious IP addresses with repeated failed login attempts:
-    
-    IP: 192.168.1.1
-      - Line: 45, Date/Time: 2024-12-04 14:23:45+0000, Country: United States
-      - Line: 78, Date/Time: 2024-12-04 14:24:30+0000, Country: United States
-    
-    IP: 203.0.113.5
-      - Line: 102, Date/Time: 2024-12-04 14:25:10+0000, Country: Unknown
+Steps to Run the Python Script for Log Parser
+
+1. Download the Script 
+   Save the Python script (`log_parser.py`) to a directory where you want to keep it.  
+
+2. Prepare the Log File
+   Place your `access.log` file in the same directory as the script.
+
+3. Open the Command Prompt  
+   Open a command prompt or terminal, and navigate to the directory containing your files.  
+   Example:  
+   cd /users/auser/project
+
+4. Run the Script
+   Use one of the following commands, depending on your analysis needs:  
+
+   - Analyze with Time Window and Threshold:
+     python log_analysis.py /path/to/log/file --time_window <value> --threshold <value>
+     Replace `<value>` with your desired parameters.  
+     Example:  
+         python log_analysis.py access.log --time_window 10 --threshold 5
+
+   - Search for Specific Patterns (e.g., Failed Logins): 
+     python log_analysis.py /path/to/log/file --search "failed login"
+
+5. Review the Results
+   The script will display suspicious activity, such as repeated failed login attempts.  
+   Example Output:  
+
+           Suspicious IP addresses with repeated failed login attempts:
+           
+           IP: 192.168.1.1
+             - Line: 45, Date/Time: 2024-12-04 14:23:45+0000, Country: United States
+             - Line: 78, Date/Time: 2024-12-04 14:24:30+0000, Country: United States
+        
+           IP: 203.0.113.5
+             - Line: 102, Date/Time: 2024-12-04 14:25:10+0000, Country: Unknown
