@@ -2,7 +2,11 @@ Steps to Run the Python Script for Log Parser
 
 Before Running the Program make sure Python is installed - 
 additionally the database for geoip2 needs to be installed and you need to point the code to the downloaded file (line:13, log_parser.py)
+Example: # Path to the GeoLite2 database (adjust as needed) in log_parser.py
+GEOIP_DB_PATH = "C:/Users/BroBy/OneDrive/Desktop/GeoLite2-City.mmdb"
 (https://www.maxmind.com/en/accounts/1097967/geoip/downloads)
+additionally the access.log needs to be downloaded and in the same directory as log_parser.py
+(https://www.kaggle.com/datasets/eliasdabbas/web-server-access-logs)
 
 1. Download the Script 
    Save the Python script (`log_parser.py`) to a directory where you want to keep it.  
